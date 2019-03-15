@@ -1,1 +1,1 @@
-g++ -O3 -I/usr/include/CL extra/minimal.cpp -o compute -lOpenCL
+g++ -O3 -I/usr/include/CL minimal.cpp -o compute -lOpenCL
