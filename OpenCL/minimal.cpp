@@ -30,30 +30,38 @@
 #define NUM_RUNS 2
 
 // Size of the matrices - K, M, N (squared)
-#define SIZE 4096
+#define SIZE 16
 
 // Threadblock sizes (e.g. for kernels myGEMM1 or myGEMM2)
-#define TS 32
-
-static std::string ReadFromFile(const char *filename) {
-  using namespace std;
-  string result;
-  ifstream stream(filename);
-  if (stream.is_open()) {
-    char c;
-    while (stream.get(c)) {
-      result.push_back(c);
-    }
+#define TS 4
+char *readKernelFromFile(const char *filename) {
+  // Open the file
+  FILE *file = fopen(filename, "r");
+  if (!file) {
+    printf("-- Error opening file %s\n", filename);
+    exit(1);
   }
-  stream.close();
-  return std::move(result);
-}
 
+  // Get its size
+  fseek(file, 0, SEEK_END);
+  long size = ftell(file);
+  rewind(file);
+
+  // Read the kernel code as a string
+  char *source = (char *)malloc((size + 1) * sizeof(char));
+  fread(source, 1, size * sizeof(char), file);
+  source[size] = '\0';
+  fclose(file);
+
+  // Save the size and return the source string
+  //*_size = (size + 1);
+  return source;
+}
 // =================================================================================================
 
 // Set the kernel as a string (better to do this in a separate file though)
 const char *kernelstring =
-    "__kernel void myGEMM1(const int M, const int N, const int K,"
+    "__kernel void myGEMM2(const int M, const int N, const int K,"
     "                      const __global float* A,"
     "                      const __global float* B,"
     "                      __global float* C) {"
@@ -68,8 +76,31 @@ const char *kernelstring =
 
 // =================================================================================================
 
-const char *filename = "gemm2.cl";
+static void Print(float *A, size_t M, size_t N) {
+  for (size_t i = 0; i < M; ++i) {
+    for (size_t j = 0; j < N; ++j) {
+      std::cout << A[i * N + j] << " ";
+    }
+    std::cout << '\n';
+  }
+}
 
+static void Multiply(const int M, const int N, const int K, const float *A,
+                     const float *B, float *C) {
+
+  for (int i = 0; i < M; ++i) {
+    for (int j = 0; j < N; ++j) {
+      float r = 0;
+      for (int k = 0; k < K; ++k) {
+        r += A[i * K + k] * B[j * K + k];
+      }
+      C[i * N + j] = r;
+    }
+  }
+}
+
+const char *filename = "gemm2.cc";
+//const char *filename = nullptr;
 // Matrix-multiplication using a custom OpenCL SGEMM kernel.
 int main(int argc, char* argv[]) {
 
@@ -86,9 +117,20 @@ int main(int argc, char* argv[]) {
     float* A = (float*)malloc(M*K*sizeof(float*));
     float* B = (float*)malloc(K*N*sizeof(float*));
     float* C = (float*)malloc(M*N*sizeof(float*));
-    for (int i=0; i<M*K; i++) { A[i] = 3.6*i + i*i + 3.1; }
-    for (int i=0; i<K*N; i++) { B[i] = 1.2*i + 0.01*i*i + 13.9; }
-    for (int i=0; i<M*N; i++) { C[i] = 0.0; }
+    for (int i = 0; i < M * K; i++) {
+      A[i] = i % K;
+    } // 3.6*i + i*i + 3.1; }
+    for (int i = 0; i < K * N; i++) {
+      B[i] = i % K;
+    } // 1.2*i + 0.01*i*i + 13.9; }
+    for (int i = 0; i < M * N; i++) {
+      C[i] = 0.0;
+    }
+    std::cout << "A - " << std::endl;
+    Print(A, M, K);
+    std::cout << "B - " << std::endl;
+    Print(B, K, N);
+    // Multiply(M, N, K, A, B, C);
 
     // Configure the OpenCL environment
     printf(">>> Initializing OpenCL...\n");
@@ -104,12 +146,12 @@ int main(int argc, char* argv[]) {
 
     if (filename) {
       std::cout << "Read from file" << filename << std::endl;
-      auto str = ReadFromFile(filename);
-      kernelstring = str.c_str();
+      kernelstring = readKernelFromFile(filename);
     }
 
     // Compile the kernel
-    cl_program program = clCreateProgramWithSource(context, 1, &kernelstring, NULL, NULL);
+    cl_program program =
+        clCreateProgramWithSource(context, 1, &kernelstring, NULL, NULL);
     clBuildProgram(program, 0, NULL, "", NULL, NULL);
 
     // Check for compilation errors
@@ -132,7 +174,7 @@ int main(int argc, char* argv[]) {
     clEnqueueWriteBuffer(queue, bufC, CL_TRUE, 0, M*N*sizeof(float), C, 0, NULL, NULL);
 
     // Configure the myGEMM kernel and set its arguments
-    cl_kernel kernel = clCreateKernel(program, "myGEMM1", NULL);
+    cl_kernel kernel = clCreateKernel(program, "myGEMM2", NULL);
     clSetKernelArg(kernel, 0, sizeof(int), (void*)&M);
     clSetKernelArg(kernel, 1, sizeof(int), (void*)&N);
     clSetKernelArg(kernel, 2, sizeof(int), (void*)&K);
@@ -143,24 +185,34 @@ int main(int argc, char* argv[]) {
     // Start the timed loop
     printf(">>> Starting %d myGEMM runs...\n", NUM_RUNS);
     gettimeofday(&Tvalue, &dummy);
-    double starttime = (double)Tvalue.tv_sec + 1.0e-6*((double)Tvalue.tv_usec);
-    for (int r=0; r<NUM_RUNS; r++) {
+    double starttime =
+        (double)Tvalue.tv_sec + 1.0e-6 * ((double)Tvalue.tv_usec);
+    for (int r = 0; r < NUM_RUNS; r++) {
 
-        // Run the myGEMM kernel
-        const size_t local[2] = { TS, TS };
-        const size_t global[2] = { M, N };
-        clEnqueueNDRangeKernel(queue, kernel, 2, NULL, global, local, 0, NULL, &event);
-
-        // Wait for calculations to be finished
-        clWaitForEvents(1, &event);
+      // Run the myGEMM kernel
+      const size_t local[2] = {TS, TS};
+      const size_t global[2] = {M, N};
+      clEnqueueNDRangeKernel(queue, kernel, 2, NULL, global, local, 0, NULL,
+                             &event);
+      // Wait for calculations to be finished
+      clWaitForEvents(1, &event);
     }
+
+    cl_event read_event = nullptr;
+
+    clEnqueueReadBuffer(queue, bufC, CL_TRUE, 0, M * N * sizeof(float), C, NULL,
+                        NULL, &read_event);
+
+    clWaitForEvents(1, &read_event);
 
     // End the timed loop
     gettimeofday(&Tvalue, &dummy);
-    double endtime = (double)Tvalue.tv_sec + 1.0e-6*((double)Tvalue.tv_usec);
+    double endtime = (double)Tvalue.tv_sec + 1.0e-6 * ((double)Tvalue.tv_usec);
     double runtime = (endtime - starttime) / (double)NUM_RUNS;
-    double gflop = ((long)K * (long)M * (long)N * 2) / (1000*1000*1000);
-    printf(">>> Done: took %.3lf seconds per run, %.1lf GFLOPS\n", runtime, gflop/runtime);
+    double gflop = ((long)K * (long)M * (long)N * 2);
+    printf(">>> Done: took %.3lf seconds per run, %.1lf FLOPS\n", runtime,
+           gflop / runtime);
+    Print(C, M, N);
 
     // Copy the output matrix C back to the CPU memory
     clEnqueueReadBuffer(queue, bufC, CL_TRUE, 0, M*N*sizeof(float), C, 0, NULL, NULL);

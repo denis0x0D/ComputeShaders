@@ -4,6 +4,7 @@ __kernel void myGEMM2(const int M, const int N, const int K,
                       __global float *C) {
 
   // Thread identifiers
+  const int TS = 4;
   const int row = get_local_id(0);                  // Local row ID (max: TS)
   const int col = get_local_id(1);                  // Local col ID (max: TS)
   const int globalRow = TS * get_group_id(0) + row; // Row ID of C (0..M)
@@ -23,6 +24,8 @@ __kernel void myGEMM2(const int M, const int N, const int K,
     // Load one tile of A and B into local memory
     const int tiledRow = TS * t + row;
     const int tiledCol = TS * t + col;
+//    Asub[col][row] = A[tiledCol * M + tiledCol];
+ //   Bsub[col][row] = B[tiledCol * K + tiledRow];
     Asub[col][row] = A[tiledCol * M + globalRow];
     Bsub[col][row] = B[globalCol * K + tiledRow];
 
