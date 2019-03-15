@@ -99,8 +99,8 @@ static void Multiply(const int M, const int N, const int K, const float *A,
   }
 }
 
-const char *filename = "gemm2.cc";
-//const char *filename = nullptr;
+//const char *filename = "gemm2.cc";
+const char *filename = nullptr;
 // Matrix-multiplication using a custom OpenCL SGEMM kernel.
 int main(int argc, char* argv[]) {
 
