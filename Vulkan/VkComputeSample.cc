@@ -285,28 +285,35 @@ int main(int argc, const char *const argv[]) {
     const VkMemoryAllocateInfo memoryAllocateInfo = {
         VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO, 0, memorySize, memoryTypeIndex};
 
+    // CreateDevice memory
     VkDeviceMemory memory1;
     BAIL_ON_BAD_RESULT(
         vkAllocateMemory(device, &memoryAllocateInfo, 0, &memory1));
-
     VkDeviceMemory memory2;
     BAIL_ON_BAD_RESULT(
         vkAllocateMemory(device, &memoryAllocateInfo, 0, &memory2));
+    VkDeviceMemory memory3;
+    BAIL_ON_BAD_RESULT(
+        vkAllocateMemory(device, &memoryAllocateInfo, 0, &memory3));
 
-    int32_t *payload1, *payload2;
+    //Map device memory to host memory
+    int32_t *payload1, *payload2, *payload3;
     BAIL_ON_BAD_RESULT(
         vkMapMemory(device, memory1, 0, memorySize, 0, (void **)&payload1));
-
     BAIL_ON_BAD_RESULT(
         vkMapMemory(device, memory2, 0, memorySize, 0, (void **)&payload2));
+    BAIL_ON_BAD_RESULT(
+        vkMapMemory(device, memory3, 0, memorySize, 0, (void **)&payload3));
 
     for (uint32_t k = 0; k < memorySize / sizeof(int32_t); k++) {
-      payload1[k] = rand();
-      payload2[k] = rand();
+      payload1[k] = 2;
+      payload2[k] = 9;
+      payload3[k] = 5;
     }
 
     vkUnmapMemory(device, memory1);
     vkUnmapMemory(device, memory2);
+    vkUnmapMemory(device, memory3);
 
     const VkBufferCreateInfo bufferCreateInfo = {
         VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
@@ -318,43 +325,42 @@ int main(int argc, const char *const argv[]) {
         1,
         &queueFamilyIndex};
 
-    //Creates buffer and bind
-    VkBuffer in_buffer;
+    //Create buffers and bind them
+    VkBuffer buffer1, buffer2, buffer3;
     BAIL_ON_BAD_RESULT(
-        vkCreateBuffer(device, &bufferCreateInfo, 0, &in_buffer));
-
-    BAIL_ON_BAD_RESULT(vkBindBufferMemory(device, in_buffer, memory1, 0));
-
-    VkBuffer out_buffer;
+        vkCreateBuffer(device, &bufferCreateInfo, 0, &buffer1));
+    BAIL_ON_BAD_RESULT(vkBindBufferMemory(device, buffer1, memory1, 0));
     BAIL_ON_BAD_RESULT(
-        vkCreateBuffer(device, &bufferCreateInfo, 0, &out_buffer));
+        vkCreateBuffer(device, &bufferCreateInfo, 0, &buffer2));
+    BAIL_ON_BAD_RESULT(vkBindBufferMemory(device, buffer2, memory2, 0));
+    BAIL_ON_BAD_RESULT(
+        vkCreateBuffer(device, &bufferCreateInfo, 0, &buffer3));
+    BAIL_ON_BAD_RESULT(vkBindBufferMemory(device, buffer3, memory3, 0));
 
-    BAIL_ON_BAD_RESULT(vkBindBufferMemory(device, out_buffer, memory2, 0));
-
+    //Read the shader from file.
     size_t size = 0;
     const char *filename_to_read =
-        "/home/khalikov/Vulkan/ComputeShaders/Vulkan/kernel_bin.vulkan";
-
+        "/home/khalikov/Vulkan/ComputeShaders/Vulkan/kernel_sum_bin.vulkan";
     uint32_t *shader_ptr = ReadFromFile(&size, filename_to_read);
 
     VkShaderModuleCreateInfo shaderModuleCreateInfo = {
         VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO, 0, 0, size, shader_ptr};
-
     VkShaderModule shader_module;
-
     // Create Shader Module.
-
     BAIL_ON_BAD_RESULT(vkCreateShaderModule(device, &shaderModuleCreateInfo, 0,
                                             &shader_module));
 
-    VkDescriptorSetLayoutBinding descriptorSetLayoutBindings[2] = {
+    VkDescriptorSetLayoutBinding descriptorSetLayoutBindings[3] = {
         {0, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT,
          0},
         {1, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT,
+         0},
+        {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT,
          0}};
 
+    //3 buffers - 3 bindings
     VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = {
-        VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO, 0, 0, 2,
+        VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO, 0, 0, 3,
         descriptorSetLayoutBindings};
 
     VkDescriptorSetLayout descriptorSetLayout;
@@ -395,7 +401,7 @@ int main(int argc, const char *const argv[]) {
         VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO, 0, 0, queueFamilyIndex};
 
     VkDescriptorPoolSize descriptorPoolSize = {
-        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2};
+        VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 3};
 
     VkDescriptorPoolCreateInfo descriptorPoolCreateInfo = {
         VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
@@ -417,19 +423,24 @@ int main(int argc, const char *const argv[]) {
     BAIL_ON_BAD_RESULT(vkAllocateDescriptorSets(
         device, &descriptorSetAllocateInfo, &descriptorSet));
 
-    VkDescriptorBufferInfo in_descriptorBufferInfo = {in_buffer, 0,
-                                                      VK_WHOLE_SIZE};
-
-    VkDescriptorBufferInfo out_descriptorBufferInfo = {out_buffer, 0,
+    VkDescriptorBufferInfo in1_descriptorBufferInfo = {buffer1, 0,
+                                                       VK_WHOLE_SIZE};
+    VkDescriptorBufferInfo in2_descriptorBufferInfo = {buffer2, 0,
+                                                       VK_WHOLE_SIZE};
+    VkDescriptorBufferInfo in3_descriptorBufferInfo = {buffer3, 0,
                                                        VK_WHOLE_SIZE};
 
-    VkWriteDescriptorSet writeDescriptorSet[2] = {
-        {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0, descriptorSet, 0, 0, 1,
-         VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0, &in_descriptorBufferInfo, 0},
-        {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0, descriptorSet, 1, 0, 1,
-         VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0, &out_descriptorBufferInfo, 0}};
+    const int descriptors_count = 3;
 
-    vkUpdateDescriptorSets(device, 2, writeDescriptorSet, 0, 0);
+    VkWriteDescriptorSet writeDescriptorSet[descriptors_count] = {
+        {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0, descriptorSet, 0, 0, 1,
+         VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0, &in1_descriptorBufferInfo, 0},
+        {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0, descriptorSet, 1, 0, 1,
+         VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0, &in2_descriptorBufferInfo, 0},
+        {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0, descriptorSet, 2, 0, 1,
+         VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0, &in3_descriptorBufferInfo, 0}};
+
+    vkUpdateDescriptorSets(device, descriptors_count, writeDescriptorSet, 0, 0);
 
     VkCommandPool commandPool;
     BAIL_ON_BAD_RESULT(
@@ -474,11 +485,14 @@ int main(int argc, const char *const argv[]) {
         vkMapMemory(device, memory1, 0, memorySize, 0, (void **)&payload1));
     BAIL_ON_BAD_RESULT(
         vkMapMemory(device, memory2, 0, memorySize, 0, (void **)&payload2));
+    BAIL_ON_BAD_RESULT(
+        vkMapMemory(device, memory3, 0, memorySize, 0, (void **)&payload3));
 
     for (uint32_t k = 0; k < memorySize / sizeof(uint32_t); k++) {
       std::cout << "x1 " << payload1[k] << " ";
       std::cout << "x2 " << payload2[k] << " ";
-      BAIL_ON_BAD_RESULT(payload1[k] == payload2[k]
+      std::cout << "x3 " << payload3[k] << " ";
+      BAIL_ON_BAD_RESULT(payload1[k] == (payload2[k] + payload3[k])
                              ? VK_SUCCESS
                              : VK_ERROR_OUT_OF_HOST_MEMORY);
       cout << '\n';
