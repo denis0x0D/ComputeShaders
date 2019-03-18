@@ -1,1 +1,1 @@
-spirv-as compute_shader_txt.vulkan -o compute_shader_bin.vulkan
+spirv-as kernel_sum_txt.vulkan -o kernel_sum_bin.vulkan
