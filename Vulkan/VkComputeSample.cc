@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <fstream>
+#include <unistd.h>
 
 using namespace std;
 
@@ -37,13 +38,18 @@ using namespace std;
     exit(-1);                                                                  \
   }
 
-const char *filename = nullptr;
+const char *filename_to_write = "/home/khalikov/Vulkan/ComputeShaders/Vulkan/"
+                                "compute_shader_bin_temp.vulkan";
+const char *filename_to_read =
+    "/home/khalikov/Vulkan/ComputeShaders/Vulkan/compute_shader_bin.vulkan";
 
-static void SaveToFile(unsigned char *data, size_t data_size) {
-  if (!filename)
+static void SaveToFile(uint32_t *ptr_data, size_t data_size,
+                       const char *filename_to_write) {
+  if (!filename_to_write)
     return;
 
-  ofstream stream(filename);
+  char *data = (char *)ptr_data;
+  ofstream stream(filename_to_write);
   if (stream.is_open()) {
     size_t index = 0;
     while (index < data_size) {
@@ -55,8 +61,24 @@ static void SaveToFile(unsigned char *data, size_t data_size) {
       stream << 0x00;
       ++index;
     }
+    stream.close();
   }
+}
+
+static uint32_t *ReadFromFile(size_t *size_out, const char *filename_to_read) {
+  if (!filename_to_read)
+    return nullptr;
+
+  char *shader = nullptr;
+  ifstream stream(filename_to_read, ios::ate);
+  size_t size = stream.tellg();
+  *size_out = size;
+  int index = 0;
+  stream.seekg(0, ios::beg);
+  shader = (char *)malloc(size);
+  stream.read(shader, size);
   stream.close();
+  return reinterpret_cast<uint32_t *>(shader);
 }
 
 static void *_alloca(size_t size) { return malloc(size); }
@@ -557,15 +579,12 @@ int main(int argc, const char *const argv[]) {
         (1 << 16) | OP_FUNCTION_END,
     };
 
-    unsigned char *shader_ptr = reinterpret_cast<unsigned char *>(shader);
+    size_t size = 0;
 
-    std::cout << "size of " << sizeof(shader) << std::endl;
-
-    SaveToFile(shader_ptr, sizeof(shader));
+    uint32_t *shader_ptr = ReadFromFile(&size, filename_to_read);
 
     VkShaderModuleCreateInfo shaderModuleCreateInfo = {
-        VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO, 0, 0, sizeof(shader),
-        shader};
+        VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO, 0, 0, size, shader_ptr};
 
     VkShaderModule shader_module;
 
