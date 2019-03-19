@@ -54,12 +54,24 @@
                OpLoopMerge %30 %29 None
                OpBranchConditional %32 %28 %30 128 1
          %28 = OpLabel
-         %39 = OpInBoundsAccessChain %_ptr_Uniform_int %14 %int_0 %31
+         %35 = OpIMul %int %22 %int_64
+         %36 = OpIAdd %int %35 %25
+         %37 = OpIMul %int %36 %int_128
+         %38 = OpIAdd %int %37 %31
+         %39 = OpInBoundsAccessChain %_ptr_Uniform_int %14 %int_0 %38
          %40 = OpLoad %int %39 None
-         %45 = OpInBoundsAccessChain %_ptr_Uniform_int %13 %int_0 %31
+         %41 = OpIMul %int %22 %int_64
+         %42 = OpIAdd %int %41 %25
+         %43 = OpIMul %int %42 %int_128
+         %44 = OpIAdd %int %43 %31
+         %45 = OpInBoundsAccessChain %_ptr_Uniform_int %13 %int_0 %44
          %46 = OpLoad %int %45 None
          %47 = OpIAdd %int %46 %40
-         %52 = OpInBoundsAccessChain %_ptr_Uniform_int %12 %int_0 %31
+         %48 = OpIMul %int %22 %int_64
+         %49 = OpIAdd %int %48 %25
+         %50 = OpIMul %int %49 %int_128
+         %51 = OpIAdd %int %50 %31
+         %52 = OpInBoundsAccessChain %_ptr_Uniform_int %12 %int_0 %51
                OpStore %52 %47 None
                OpBranch %29
          %29 = OpLabel
