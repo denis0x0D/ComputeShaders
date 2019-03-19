@@ -39,11 +39,6 @@ using namespace std;
     exit(-1);                                                                  \
   }
 
-const char *filename_to_write = "/home/khalikov/Vulkan/ComputeShaders/Vulkan/"
-                                "compute_shader_bin_temp.vulkan";
-const char *filename_to_read =
-    "/home/khalikov/Vulkan/ComputeShaders/Vulkan/compute_shader_bin.vulkan";
-
 static void SaveToFile(uint32_t *ptr_data, size_t data_size,
                        const char *filename_to_write) {
   if (!filename_to_write)
@@ -72,13 +67,14 @@ static uint32_t *ReadFromFile(size_t *size_out, const char *filename_to_read) {
 
   char *shader = nullptr;
   ifstream stream(filename_to_read, ios::ate);
-  size_t size = stream.tellg();
-  *size_out = size;
-  int index = 0;
-  stream.seekg(0, ios::beg);
-  shader = (char *)malloc(size);
-  stream.read(shader, size);
-  stream.close();
+  if (stream.is_open()) {
+    size_t size = stream.tellg();
+    *size_out = size;
+    stream.seekg(0, ios::beg);
+    shader = (char *)malloc(size);
+    stream.read(shader, size);
+    stream.close();
+  }
   return reinterpret_cast<uint32_t *>(shader);
 }
 
@@ -260,7 +256,7 @@ int main(int argc, const char *const argv[]) {
     const uint32_t bufferSize = sizeof(int32_t) * bufferLength;
 
     // we are going to need two buffers from this one memory
-    const VkDeviceSize memorySize = 128;
+    const VkDeviceSize memorySize = bufferSize;
 
     // set memoryTypeIndex to an invalid entry in the properties.memoryTypes
     // array
@@ -285,7 +281,7 @@ int main(int argc, const char *const argv[]) {
     const VkMemoryAllocateInfo memoryAllocateInfo = {
         VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO, 0, memorySize, memoryTypeIndex};
 
-    // CreateDevice memory
+    // Allocate the device memory.
     VkDeviceMemory memory1;
     BAIL_ON_BAD_RESULT(
         vkAllocateMemory(device, &memoryAllocateInfo, 0, &memory1));
@@ -296,7 +292,7 @@ int main(int argc, const char *const argv[]) {
     BAIL_ON_BAD_RESULT(
         vkAllocateMemory(device, &memoryAllocateInfo, 0, &memory3));
 
-    //Map device memory to host memory
+    // Map the device memory to host memory
     int32_t *payload1, *payload2, *payload3;
     BAIL_ON_BAD_RESULT(
         vkMapMemory(device, memory1, 0, memorySize, 0, (void **)&payload1));
@@ -306,8 +302,11 @@ int main(int argc, const char *const argv[]) {
         vkMapMemory(device, memory3, 0, memorySize, 0, (void **)&payload3));
 
     for (uint32_t k = 0; k < memorySize / sizeof(int32_t); k++) {
-      payload1[k] = 2;
+      // Output buffer.
+      payload1[k] = 0;
+      // Input buffer 1
       payload2[k] = 9;
+      // Input buffer 2.
       payload3[k] = 5;
     }
 
@@ -325,7 +324,7 @@ int main(int argc, const char *const argv[]) {
         1,
         &queueFamilyIndex};
 
-    //Create buffers and bind them
+    // Create buffers and bind them to the device memory.
     VkBuffer buffer1, buffer2, buffer3;
     BAIL_ON_BAD_RESULT(
         vkCreateBuffer(device, &bufferCreateInfo, 0, &buffer1));
@@ -337,8 +336,10 @@ int main(int argc, const char *const argv[]) {
         vkCreateBuffer(device, &bufferCreateInfo, 0, &buffer3));
     BAIL_ON_BAD_RESULT(vkBindBufferMemory(device, buffer3, memory3, 0));
 
-    //Read the shader from file.
+    // Read the shader from file.
     size_t size = 0;
+
+    // Hardcoded path to binary shader.
     const char *filename_to_read =
         "/home/khalikov/Vulkan/ComputeShaders/Vulkan/kernel_sum_bin.vulkan";
     uint32_t *shader_ptr = ReadFromFile(&size, filename_to_read);
@@ -358,7 +359,7 @@ int main(int argc, const char *const argv[]) {
         {2, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT,
          0}};
 
-    //3 buffers - 3 bindings
+    // 3 buffers - 3 bindings
     VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = {
         VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO, 0, 0, 3,
         descriptorSetLayoutBindings};
@@ -380,7 +381,7 @@ int main(int argc, const char *const argv[]) {
     BAIL_ON_BAD_RESULT(vkCreatePipelineLayout(device, &pipelineLayoutCreateInfo,
                                               0, &pipelineLayout));
 
-    const char *kernel_name = "default_function_kernel0";
+    const char *kernel_name = "compute_kernel";
 
     VkComputePipelineCreateInfo computePipelineCreateInfo = {
         VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
@@ -480,7 +481,7 @@ int main(int argc, const char *const argv[]) {
 
     BAIL_ON_BAD_RESULT(vkQueueWaitIdle(queue));
 
-    //Check the result.
+    // Check the result.
     BAIL_ON_BAD_RESULT(
         vkMapMemory(device, memory1, 0, memorySize, 0, (void **)&payload1));
     BAIL_ON_BAD_RESULT(

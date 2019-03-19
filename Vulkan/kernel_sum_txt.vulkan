@@ -6,7 +6,7 @@
                OpCapability Shader
           %1 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450
-               OpEntryPoint GLCompute %15 "default_function_kernel0" %gl_WorkGroupID %gl_LocalInvocationID
+               OpEntryPoint GLCompute %15 "compute_kernel" %gl_WorkGroupID %gl_LocalInvocationID
                OpExecutionMode %15 LocalSize 64 1 1
                OpDecorate %_runtimearr_int ArrayStride 4
                OpMemberDecorate %_struct_10 0 Offset 0
