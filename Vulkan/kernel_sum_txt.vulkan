@@ -43,10 +43,6 @@
       %int_1 = OpConstant %int 1
          %15 = OpFunction %void None %8
          %16 = OpLabel
-         %21 = OpAccessChain %_ptr_Input_int %gl_WorkGroupID %int_0
-         %22 = OpLoad %int %21
-         %24 = OpAccessChain %_ptr_Input_int %gl_LocalInvocationID %int_0
-         %25 = OpLoad %int %24
                OpBranch %27
          %27 = OpLabel
          %31 = OpPhi %int %int_0 %16 %54 %29
