@@ -304,13 +304,14 @@ int main(int argc, const char *const argv[]) {
     BAIL_ON_BAD_RESULT(
         vkMapMemory(device, memory3, 0, memorySize, 0, (void **)&payload3));
 
-    for (uint32_t k = 0; k < memorySize / sizeof(int32_t); k++) {
+    for (uint32_t k = 0, j = memorySize / sizeof(int32_t);
+         k < memorySize / sizeof(int32_t); k++, --j) {
       // Output buffer.
-      payload1[k] = 0;
+      payload1[k] = j;
       // Input buffer 1
-      payload2[k] = 0;
+      payload2[k] = j;
       // Input buffer 2.
-      payload3[k] = 0;
+      payload3[k] = j;
     }
 
     vkUnmapMemory(device, memory1);

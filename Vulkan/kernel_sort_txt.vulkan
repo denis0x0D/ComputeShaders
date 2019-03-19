@@ -3,6 +3,7 @@
 ; Generator: Khronos; 0
 ; Bound: 55
 ; Schema: 0
+               ; Decoration!
                OpCapability Shader
           %1 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450
@@ -17,8 +18,6 @@
                OpDecorate %13 Binding 1
                OpDecorate %14 DescriptorSet 0
                OpDecorate %14 Binding 2
-               OpDecorate %gl_WorkGroupID BuiltIn WorkgroupId
-               OpDecorate %gl_LocalInvocationID BuiltIn LocalInvocationId
         %int = OpTypeInt 32 1
        %uint = OpTypeInt 32 0
        %bool = OpTypeBool
@@ -29,32 +28,43 @@
 %_runtimearr_int = OpTypeRuntimeArray %int
  %_struct_10 = OpTypeStruct %_runtimearr_int
 %_ptr_Uniform__struct_10 = OpTypePointer Uniform %_struct_10
-         %12 = OpVariable %_ptr_Uniform__struct_10 Uniform
-         %13 = OpVariable %_ptr_Uniform__struct_10 Uniform
          %14 = OpVariable %_ptr_Uniform__struct_10 Uniform
-      %v3int = OpTypeVector %int 3
-%_ptr_Input_v3int = OpTypePointer Input %v3int
-%gl_WorkGroupID = OpVariable %_ptr_Input_v3int Input
 %_ptr_Input_int = OpTypePointer Input %int
-%gl_LocalInvocationID = OpVariable %_ptr_Input_v3int Input
     %int_128 = OpConstant %int 128
 %_ptr_Uniform_int = OpTypePointer Uniform %int
      %int_64 = OpConstant %int 64
       %int_1 = OpConstant %int 1
+         ; Function body!
          %15 = OpFunction %void None %8
          %16 = OpLabel
                OpBranch %27
          %27 = OpLabel
-         %31 = OpPhi %int %int_0 %16 %54 %29
+         %31 = OpPhi %int %int_1 %16 %54 %29
          %32 = OpSLessThan %bool %31 %int_128
                OpLoopMerge %30 %29 None
                OpBranchConditional %32 %28 %30 128 1
          %28 = OpLabel
          %39 = OpInBoundsAccessChain %_ptr_Uniform_int %14 %int_0 %31
          %40 = OpLoad %int %39 None
-         %41 = OpIAdd %int %40 %int_1
-               OpStore %39 %41 None
-               OpBranch %29
+         %42 = OpISub %int %31 %int_1
+               OpBranch %73
+         %73 = OpLabel 
+         %41 = OpPhi %int %42 %28 %72 %66
+         %61 = OpSGreaterThanEqual %bool %41 %int_0
+         %62 = OpInBoundsAccessChain %_ptr_Uniform_int %14 %int_0 %41
+         %63 = OpLoad %int %62 None
+         %64 = OpSLessThan %bool %63 %40
+         %65 = OpLogicalAnd %bool %64 %61
+               OpLoopMerge %29 %66 None
+               OpBranchConditional %65 %66 %29 128 1
+         %66 = OpLabel
+         %68 = OpInBoundsAccessChain %_ptr_Uniform_int %14 %int_0 %41
+         %69 = OpIAdd %int %41 %int_1
+         %70 = OpInBoundsAccessChain %_ptr_Uniform_int %14 %int_0 %69
+         %71 = OpLoad %int %68 None
+               OpStore %70 %71 None
+         %72 = OpISub %int %41 %int_1
+               OpBranch %73
          %29 = OpLabel
          %54 = OpIAdd %int %31 %int_1
                OpBranch %27
