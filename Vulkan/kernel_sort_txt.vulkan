@@ -52,11 +52,8 @@
          %28 = OpLabel
          %39 = OpInBoundsAccessChain %_ptr_Uniform_int %14 %int_0 %31
          %40 = OpLoad %int %39 None
-         %45 = OpInBoundsAccessChain %_ptr_Uniform_int %13 %int_0 %31
-         %46 = OpLoad %int %45 None
-         %47 = OpIAdd %int %46 %40
-         %52 = OpInBoundsAccessChain %_ptr_Uniform_int %12 %int_0 %31
-               OpStore %52 %47 None
+         %41 = OpIAdd %int %40 %int_1
+               OpStore %39 %41 None
                OpBranch %29
          %29 = OpLabel
          %54 = OpIAdd %int %31 %int_1

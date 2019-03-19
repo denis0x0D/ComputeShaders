@@ -183,8 +183,11 @@ VkResult vkGetBestComputeQueueNPH(VkPhysicalDevice physicalDevice,
 }
 
 int main(int argc, const char *const argv[]) {
-  (void)argc;
-  (void)argv;
+  const char *filename = nullptr;
+
+  if (argc > 1) {
+    filename = argv[1];
+  }
 
   const VkApplicationInfo applicationInfo = {VK_STRUCTURE_TYPE_APPLICATION_INFO,
                                              0,
@@ -305,9 +308,9 @@ int main(int argc, const char *const argv[]) {
       // Output buffer.
       payload1[k] = 0;
       // Input buffer 1
-      payload2[k] = 9;
+      payload2[k] = 0;
       // Input buffer 2.
-      payload3[k] = 5;
+      payload3[k] = 0;
     }
 
     vkUnmapMemory(device, memory1);
@@ -340,9 +343,12 @@ int main(int argc, const char *const argv[]) {
     size_t size = 0;
 
     // Hardcoded path to binary shader.
-    const char *filename_to_read =
-        "/home/khalikov/Vulkan/ComputeShaders/Vulkan/kernel_sum_bin.vulkan";
-    uint32_t *shader_ptr = ReadFromFile(&size, filename_to_read);
+    uint32_t *shader_ptr = ReadFromFile(&size, filename);
+
+    if (!shader_ptr) {
+      std::cerr << "Shader is null" << std::endl;
+      exit(1);
+    }
 
     VkShaderModuleCreateInfo shaderModuleCreateInfo = {
         VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO, 0, 0, size, shader_ptr};
@@ -467,7 +473,7 @@ int main(int argc, const char *const argv[]) {
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
                             pipelineLayout, 0, 1, &descriptorSet, 0, 0);
 
-    vkCmdDispatch(commandBuffer, bufferSize / sizeof(int32_t), 1, 1);
+    vkCmdDispatch(commandBuffer, 1, 1, 1);
 
     BAIL_ON_BAD_RESULT(vkEndCommandBuffer(commandBuffer));
 
@@ -493,9 +499,9 @@ int main(int argc, const char *const argv[]) {
       std::cout << "x1 " << payload1[k] << " ";
       std::cout << "x2 " << payload2[k] << " ";
       std::cout << "x3 " << payload3[k] << " ";
-      BAIL_ON_BAD_RESULT(payload1[k] == (payload2[k] + payload3[k])
-                             ? VK_SUCCESS
-                             : VK_ERROR_OUT_OF_HOST_MEMORY);
+      //      BAIL_ON_BAD_RESULT(payload1[k] == (payload2[k] + payload3[k])
+      //                            ? VK_SUCCESS
+      //                            : VK_ERROR_OUT_OF_HOST_MEMORY);
       cout << '\n';
     }
 
