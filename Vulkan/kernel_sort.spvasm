@@ -46,26 +46,39 @@
          %16 = OpLabel
                OpBranch %17
          %17 = OpLabel
-         %18 = OpPhi %int %int_1 %16 %25 %24
-         %19 = OpSLessThan %bool %18 %int_128
+         %index_i = OpPhi %int %int_1 %16 %25 %24
+         %19 = OpSLessThan %bool %index_i %int_128
                OpLoopMerge %30 %24 None
                OpBranchConditional %19 %20 %30 128 1
          %20 = OpLabel
-         %34 = OpPhi %int %18 %17 %22 %21
-         %26 = OpSGreaterThanEqual %bool %34 %int_0
+         %34 = OpISub %int %index_i %int_1
+         %38 = OpInBoundsAccessChain %_ptr_Uniform_int %12 %int_0 %index_i
+         %value = OpLoad %int %38 None
+               OpBranch %50
+         %50 = OpLabel
+         %index_j = OpPhi %int %34 %20 %22 %21
+         %36 = OpInBoundsAccessChain %_ptr_Uniform_int %12 %int_0 %index_j
+         %37 = OpLoad %int %36 None
+         %26 = OpSGreaterThanEqual %bool %index_j %int_0
+         %40 = OpSLessThan %bool %value %37
+         %41 = OpLogicalAnd %bool %40 %26
                OpLoopMerge %24 %21 None
-               OpBranchConditional %26 %27 %24
+               OpBranchConditional %41 %27 %24
          %27 = OpLabel
-         %28 = OpInBoundsAccessChain %_ptr_Uniform_int %12 %int_0 %34
-         %29 = OpLoad %int %28 None
-         %31 = OpIAdd %int %29 %int_2
-               OpStore %28 %31 None
+         %index_j_1 = OpIAdd %int %index_j %int_1
+         %43 = OpInBoundsAccessChain %_ptr_Uniform_int %12 %int_0 %index_j
+         %44 = OpInBoundsAccessChain %_ptr_Uniform_int %12 %int_0 %index_j_1
+         %45 = OpLoad %int %43 None
+               OpStore %44 %45 None
                OpBranch %21
          %21 = OpLabel
-         %22 = OpISub %int %34 %int_1
-               OpBranch %20
+         %22 = OpISub %int %index_j %int_1
+               OpBranch %50
          %24 = OpLabel
-         %25 = OpIAdd %int %18 %int_1 
+         %46 = OpIAdd %int %index_j %int_1
+         %47 = OpInBoundsAccessChain %_ptr_Uniform_int %12 %int_0 %46
+               OpStore %47 %value
+         %25 = OpIAdd %int %index_i %int_1 
                OpBranch %17
          %30 = OpLabel
                OpReturn
