@@ -6,7 +6,7 @@
                OpCapability Shader
           %1 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450
-               OpEntryPoint GLCompute %15 "compute_kernel" %gl_WorkGroupID %gl_LocalInvocationID
+               OpEntryPoint GLCompute %15 "compute_kernel"
                OpExecutionMode %15 LocalSize 1 1 1
                OpDecorate %_runtimearr_int ArrayStride 4
                OpMemberDecorate %_struct_10 0 Offset 0
@@ -17,8 +17,6 @@
                OpDecorate %13 Binding 1
                OpDecorate %14 DescriptorSet 0
                OpDecorate %14 Binding 2
-               OpDecorate %gl_WorkGroupID BuiltIn WorkgroupId
-               OpDecorate %gl_LocalInvocationID BuiltIn LocalInvocationId
         %int = OpTypeInt 32 1
        %uint = OpTypeInt 32 0
        %bool = OpTypeBool
@@ -32,11 +30,6 @@
          %12 = OpVariable %_ptr_Uniform__struct_10 Uniform
          %13 = OpVariable %_ptr_Uniform__struct_10 Uniform
          %14 = OpVariable %_ptr_Uniform__struct_10 Uniform
-      %v3int = OpTypeVector %int 3
-%_ptr_Input_v3int = OpTypePointer Input %v3int
-%gl_WorkGroupID = OpVariable %_ptr_Input_v3int Input
-%_ptr_Input_int = OpTypePointer Input %int
-%gl_LocalInvocationID = OpVariable %_ptr_Input_v3int Input
     %int_128 = OpConstant %int 128
 %_ptr_Uniform_int = OpTypePointer Uniform %int
      %int_64 = OpConstant %int 64
