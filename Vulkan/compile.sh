@@ -1,1 +1,1 @@
-spirv-as kernel_sum_txt.vulkan -o kernel_sum_bin.vulkan
+spirv-as kernel_sort.spvasm -o kernel_sort.spv
