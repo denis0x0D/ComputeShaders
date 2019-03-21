@@ -1,1 +1,1 @@
-g++ -o compute VkComputeSample.cc -lvulkan
+g++ -o compute VulkanRuntime.cc -lvulkan

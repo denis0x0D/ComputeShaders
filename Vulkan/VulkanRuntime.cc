@@ -272,7 +272,7 @@ int main(int argc, const char *const argv[]) {
 
     vkGetPhysicalDeviceMemoryProperties(physicalDevices[i], &properties);
 
-    const size_t K = 8;
+    const size_t K = 64;
     const int32_t bufferLength = K * K;
     const uint32_t bufferSize = sizeof(int32_t) * bufferLength;
 
@@ -511,9 +511,14 @@ int main(int argc, const char *const argv[]) {
         vkMapMemory(device, memory2, 0, memorySize, 0, (void **)&payload2));
     BAIL_ON_BAD_RESULT(
         vkMapMemory(device, memory3, 0, memorySize, 0, (void **)&payload3));
-
-    std::cout << "B : " << std::endl;
+/*
+    std::cout << "A: " << std::endl;
     PrintMatrixRowMajor(payload2, K, K);
+    std::cout << "B: "<< std::endl;
+    PrintMatrixRowMajor(payload3, K, K);
+    std::cout << "C: " << std::endl;
+    PrintMatrixRowMajor(payload1, K, K);
+    */
 #ifdef DEBUG
     for (uint32_t k = 0; k < memorySize / sizeof(uint32_t); k++) {
       std::cout << "x1 " << payload1[k] << " ";

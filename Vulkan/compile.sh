@@ -1,1 +1,1 @@
-spirv-as kernel_sort.spvasm -o kernel_sort.spv
+spirv-as kernel_matmul_1.spvasm -o kernel_matmul_1.spv
