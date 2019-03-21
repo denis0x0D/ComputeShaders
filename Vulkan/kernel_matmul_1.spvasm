@@ -30,7 +30,7 @@
          %12 = OpVariable %_ptr_Uniform__struct_10 Uniform
          %13 = OpVariable %_ptr_Uniform__struct_10 Uniform
          %14 = OpVariable %_ptr_Uniform__struct_10 Uniform
-    %K = OpConstant %int 8
+    %K = OpConstant %int 256
     %int_4 = OpConstant %int 4
 %_ptr_Uniform_int = OpTypePointer Uniform %int
      %int_64 = OpConstant %int 64
