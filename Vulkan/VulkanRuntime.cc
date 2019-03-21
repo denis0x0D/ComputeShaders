@@ -322,7 +322,7 @@ int main(int argc, const char *const argv[]) {
     BAIL_ON_BAD_RESULT(
         vkMapMemory(device, memory3, 0, memorySize, 0, (void **)&payload3));
 
-
+    // Init 2D tensors.
     for (int i = 0; i < K; ++i) {
       for (int j = 0; j < K; ++j) {
         payload1[i * K + j] = 0;
@@ -330,18 +330,6 @@ int main(int argc, const char *const argv[]) {
         payload3[i * K + j] = i;
       }
     }
-    /*
-        for (uint32_t k = 0, j = memorySize / sizeof(int32_t);
-             k < memorySize / sizeof(int32_t); k++, --j) {
-          // Output buffer.
-          payload1[k] = 0;
-          // Input buffer 1
-          payload2[k] = j;
-          // Input buffer 2.
-          payload3[k] = j;
-        }
-        */
-
     vkUnmapMemory(device, memory1);
     vkUnmapMemory(device, memory2);
     vkUnmapMemory(device, memory3);
