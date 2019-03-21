@@ -7,7 +7,7 @@
           %1 = OpExtInstImport "GLSL.std.450"
                OpMemoryModel Logical GLSL450
                OpEntryPoint GLCompute %15 "compute_kernel" %gl_GlobalInvocationID
-               OpExecutionMode %15 LocalSize 1 1 1
+               OpExecutionMode %15 LocalSize 8 8 1
                OpDecorate %_runtimearr_int ArrayStride 4
                OpMemberDecorate %_struct_10 0 Offset 0
                OpDecorate %_struct_10 BufferBlock
@@ -49,6 +49,7 @@
          %global_col_ptr = OpAccessChain %_ptr_Input_int %gl_GlobalInvocationID %int_1
          %global_row = OpLoad %int %global_row_ptr None
          %global_col = OpLoad %int %global_col_ptr None
+               OpStore  %local_ptr %int_0 None
                OpBranch %27
          %27 = OpLabel
          %index_k = OpPhi %int %int_0 %16 %22 %21
