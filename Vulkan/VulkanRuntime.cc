@@ -39,6 +39,24 @@ using namespace std;
     exit(-1);                                                                  \
   }
 
+static void PrintMatrixRowMajor(const int32_t *A, int M, int K) {
+  for (int i = 0; i < M; ++i) {
+    for (int j = 0; j < K; ++j) {
+      cout << A[i * K + j] << " ";
+    }
+    cout << '\n';
+  }
+}
+
+static void PrintMatrixColMajor(const int32_t *A, int M, int K) {
+  for (int i = 0; i < K; ++i) {
+    for (int j = 0; j < M; ++j) {
+      cout << A[i * M + j] << " ";
+    }
+    cout << '\n';
+  }
+}
+
 static void SaveToFile(uint32_t *ptr_data, size_t data_size,
                        const char *filename_to_write) {
   if (!filename_to_write)
@@ -254,8 +272,8 @@ int main(int argc, const char *const argv[]) {
 
     vkGetPhysicalDeviceMemoryProperties(physicalDevices[i], &properties);
 
-    const int32_t bufferLength = 128;
-
+    const size_t K = 8;
+    const int32_t bufferLength = K * K;
     const uint32_t bufferSize = sizeof(int32_t) * bufferLength;
 
     // we are going to need two buffers from this one memory
@@ -304,15 +322,25 @@ int main(int argc, const char *const argv[]) {
     BAIL_ON_BAD_RESULT(
         vkMapMemory(device, memory3, 0, memorySize, 0, (void **)&payload3));
 
-    for (uint32_t k = 0, j = memorySize / sizeof(int32_t);
-         k < memorySize / sizeof(int32_t); k++, --j) {
-      // Output buffer.
-      payload1[k] = j;
-      // Input buffer 1
-      payload2[k] = j;
-      // Input buffer 2.
-      payload3[k] = j;
+
+    for (int i = 0; i < K; ++i) {
+      for (int j = 0; j < K; ++j) {
+        payload1[i * K + j] = 0;
+        payload2[i * K + j] = i;
+        payload3[i * K + j] = i;
+      }
     }
+    /*
+        for (uint32_t k = 0, j = memorySize / sizeof(int32_t);
+             k < memorySize / sizeof(int32_t); k++, --j) {
+          // Output buffer.
+          payload1[k] = 0;
+          // Input buffer 1
+          payload2[k] = j;
+          // Input buffer 2.
+          payload3[k] = j;
+        }
+        */
 
     vkUnmapMemory(device, memory1);
     vkUnmapMemory(device, memory2);
@@ -496,15 +524,19 @@ int main(int argc, const char *const argv[]) {
     BAIL_ON_BAD_RESULT(
         vkMapMemory(device, memory3, 0, memorySize, 0, (void **)&payload3));
 
+    std::cout << "B : " << std::endl;
+    PrintMatrixRowMajor(payload2, K, K);
+#ifdef DEBUG
     for (uint32_t k = 0; k < memorySize / sizeof(uint32_t); k++) {
       std::cout << "x1 " << payload1[k] << " ";
       std::cout << "x2 " << payload2[k] << " ";
       std::cout << "x3 " << payload3[k] << " ";
-      //      BAIL_ON_BAD_RESULT(payload1[k] == (payload2[k] + payload3[k])
-      //                            ? VK_SUCCESS
-      //                            : VK_ERROR_OUT_OF_HOST_MEMORY);
+      // BAIL_ON_BAD_RESULT(payload1[k] == (payload2[k] + payload3[k])
+      //                      ? VK_SUCCESS
+      //                     : VK_ERROR_OUT_OF_HOST_MEMORY);
       cout << '\n';
     }
+#endif
 
     std::cout << "End of the execution " << std::endl;
   }
