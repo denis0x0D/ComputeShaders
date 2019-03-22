@@ -32,9 +32,9 @@ void Print (int *A, int M, int N) {
 }
 
 int main(int argc, char **argv) {
-  const int N = 256;
-  const int K = 256;
-  const int M = 256;
+  const int N = 1280;
+  const int K = 1280;
+  const int M = 1280;
   int *A = new int[M * K];
   int *B = new int[K * N];
   int *C = new int[N * M];
