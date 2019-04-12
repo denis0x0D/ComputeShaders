@@ -272,8 +272,8 @@ int main(int argc, const char *const argv[]) {
 
     vkGetPhysicalDeviceMemoryProperties(physicalDevices[i], &properties);
 
-    const size_t K = 1280;
-    const int32_t bufferLength = K * K;
+    const size_t K = 128;
+    const int32_t bufferLength = K;
     const uint32_t bufferSize = sizeof(int32_t) * bufferLength;
 
     // we are going to need two buffers from this one memory
@@ -324,11 +324,9 @@ int main(int argc, const char *const argv[]) {
 
     // Init 2D tensors.
     for (int i = 0; i < K; ++i) {
-      for (int j = 0; j < K; ++j) {
-        payload1[i * K + j] = 0;
-        payload2[i * K + j] = i;
-        payload3[i * K + j] = i;
-      }
+      payload2[i] = 1;
+      payload3[i] = 3;
+      payload1[i] = 0;
     }
     vkUnmapMemory(device, memory1);
     vkUnmapMemory(device, memory2);
@@ -490,7 +488,7 @@ int main(int argc, const char *const argv[]) {
     vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
                             pipelineLayout, 0, 1, &descriptorSet, 0, 0);
 
-    vkCmdDispatch(commandBuffer, 40, 40, 1);
+    vkCmdDispatch(commandBuffer, 1, 1, 1);
 
     BAIL_ON_BAD_RESULT(vkEndCommandBuffer(commandBuffer));
 
